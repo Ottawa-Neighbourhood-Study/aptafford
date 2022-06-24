@@ -1,0 +1,40 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# aptafford
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+Functions for collecting and analyzing apartment affordability data.
+
+## Installation
+
+You can install the development version of aptafford like so:
+
+```{r}
+# from github, tbc
+```
+
+## Example
+
+One function to collect current apartment listings in Ottawa, Ontario:
+
+```{r example, eval = FALSE}
+library(aptafford)
+
+apartments <- aptafford::padmapper_scrape()
+
+```
