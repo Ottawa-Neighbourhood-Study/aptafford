@@ -12,8 +12,11 @@ RoxygenNote: 7.1.2
 Imports: 
     dplyr,
     httr,
+    janitor,
     magrittr,
     purrr,
-    readr
+    readr,
+    stringr,
+    tidyr
 URL: https://github.com/Ottawa-Neighbourhood-Study/aptafford
 BugReports: https://github.com/Ottawa-Neighbourhood-Study/aptafford/issues

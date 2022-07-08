@@ -2,4 +2,5 @@
 
 export("%>%")
 export(padmapper_scrape)
+export(realtor_scrape)
 importFrom(magrittr,"%>%")
