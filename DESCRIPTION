@@ -13,9 +13,11 @@ Imports:
     dplyr,
     httr,
     janitor,
+    jsonlite,
     magrittr,
     purrr,
     readr,
+    rvest,
     stringr,
     tidyr
 URL: https://github.com/Ottawa-Neighbourhood-Study/aptafford

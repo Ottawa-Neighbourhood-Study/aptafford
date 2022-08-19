@@ -4,11 +4,17 @@
 
 #' Scrape rental units from Realtor.ca
 #'
+#' Call Realtor.ca's API to collect data about rental units within a lat/lon
+#' bounding box. The API returns up to 200 units per page, so is called in a
+#' loop. A bounding box sets the area in scope. Defaults to Ottawa, ON.
+#'
 #' @param max_pages Number of pages to capture.
-#' @param lat_max Maximum latitude. Default values give Ottawa region.
+#' @param lat_max Maximum latitude of bounding box. Default values give Ottawa region.
 #' @param lon_max Maximum longitude.
 #' @param lat_min Minimum latitude.
 #' @param lon_min Minimum longitude.
+#' @param polite_pause Number of seconds to pause between API calls. Default 5.
+#' @param verbose Boolean. If TRUE will return detailed POST information.
 #'
 #' @return A tbl_df containing unique rental units in the bounding box.
 #' @export
@@ -16,7 +22,14 @@ realtor_scrape <- function(max_pages = 5,
                            lat_max=45.61892,
                            lon_max=-75.02541,
                            lat_min=44.87931,
-                           lon_min=-76.57449){
+                           lon_min=-76.57449,
+                           polite_pause = 5,
+                           verbose = FALSE){
+
+  if (polite_pause < 1) {
+    warning("Minimum pause duration is 1 second. Setting polite_pause = 1.")
+    polite_pause <- 1
+  }
 
   # for dplyr data masking
   name <- value <- NULL
@@ -74,7 +87,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://api2.realtor.ca/Listing.svc/Pro
     unlist()
 
   powershell_headers_tib <- dplyr::tibble(raw = powershell_headers_tib) %>%
-    tidyr::separate(col = "raw", into =c( "name", "value"), sep = "=", extra = "merge") %>%
+    tidyr::separate(col = "raw", into =c( "name", "value"), sep = "=", extra = "merge", fill = "right") %>%
     dplyr::mutate(name = stringr::str_remove_all(name,   '"'),
            value = stringr::str_remove_all(value, '^"|"$'),
            name = stringr::str_squish(name),
@@ -99,7 +112,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://api2.realtor.ca/Listing.svc/Pro
   #max_pages <- 5
   for (i in 1:max_pages){
 
-    message(sprintf("Getting page %s of results..", i))
+    message(sprintf("Getting page %s of results..        \r", i), appendLF = FALSE)
     body_post <- paste0(powershell_body, i)
 
     body_post <-sprintf("ZoomLevel=10&LatitudeMax=%s&LongitudeMax=%s&LatitudeMin=%s&LongitudeMin=%s&Sort=6-D&PropertyTypeGroupID=1&PropertySearchTypeId=1&TransactionTypeId=3&Currency=CAD&RecordsPerPage=200&ApplicationId=1&CultureId=1&Version=7.0&CurrentPage=%s",
@@ -109,6 +122,8 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://api2.realtor.ca/Listing.svc/Pro
                         lon_min,
                         i)
 
+    # verbosity of httr::POST is controlled by adding a function parameter
+    if (verbose){
     resp <- httr::POST(
       url = "https://api2.realtor.ca/Listing.svc/PropertySearch_Post",
       httr::add_headers(powershell_headers_vec),
@@ -117,6 +132,15 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://api2.realtor.ca/Listing.svc/Pro
       httr::content_type_json(),
       httr::verbose()
     )
+    } else {
+      resp <- httr::POST(
+        url = "https://api2.realtor.ca/Listing.svc/PropertySearch_Post",
+        httr::add_headers(powershell_headers_vec),
+        body = body_post,
+        encode = "raw",
+        httr::content_type_json()
+      )
+    }
 
     result <- httr::content(resp)
 
@@ -127,42 +151,46 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://api2.realtor.ca/Listing.svc/Pro
       next
     }
 
-    message("Success, adding results")
+    message("Success, adding results...                      \r", appendLF = FALSE)
 
     results[[i]] <- result$Results
 
     if (i < max_pages){
-      message("Waiting for next page...")
-      Sys.sleep(5)
+      message("Waiting for next page...                        \r", appendLF = FALSE)
+      Sys.sleep(polite_pause)
     }
   }
 
-  # function to parse results into tidy data frame
+  # function to parse results into tidy data frame, we call it below
   flatten_data <- function(x) {
     x$Individual <- NULL
     x$Property$Photo <- NULL
     x$Media <- NULL
     x$Property$Parking <- NULL
+    x$OpenHouse <- NULL
 
     x %>%
       unlist() %>%
       as.list() %>%
-      dplyr::as_tibble() %>%
-      janitor::clean_names()
+      dplyr::as_tibble()
   }
 
 
-  message("Tidying results...")
+  message("Tidying results...                        \r", appendLF = FALSE)
 
   data_tidy <- results %>%
     unlist(recursive = FALSE) %>%
-    purrr::map_dfr(function(x) {
-      #message(x$Id)
-      flatten_data(x)})
+    purrr::map_dfr(flatten_data) %>%
+    janitor::clean_names()
+
 
   # make sure they're all unique
   data_tidy <- data_tidy %>%
-    dplyr::distinct()
+    dplyr::distinct() %>%
+    dplyr::mutate(date_scraped = as.character(Sys.Date()))
 
   return (data_tidy)
 }
+
+
+

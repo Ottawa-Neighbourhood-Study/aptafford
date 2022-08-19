@@ -9,23 +9,31 @@ realtor_scrape(
   lat_max = 45.61892,
   lon_max = -75.02541,
   lat_min = 44.87931,
-  lon_min = -76.57449
+  lon_min = -76.57449,
+  polite_pause = 5,
+  verbose = FALSE
 )
 }
 \arguments{
 \item{max_pages}{Number of pages to capture.}
 
-\item{lat_max}{Maximum latitude. Default values give Ottawa region.}
+\item{lat_max}{Maximum latitude of bounding box. Default values give Ottawa region.}
 
 \item{lon_max}{Maximum longitude.}
 
 \item{lat_min}{Minimum latitude.}
 
 \item{lon_min}{Minimum longitude.}
+
+\item{polite_pause}{Number of seconds to pause between API calls. Default 5.}
+
+\item{verbose}{Boolean. If TRUE will return detailed POST information.}
 }
 \value{
 A tbl_df containing unique rental units in the bounding box.
 }
 \description{
-Scrape rental units from Realtor.ca
+Call Realtor.ca's API to collect data about rental units within a lat/lon
+bounding box. The API returns up to 200 units per page, so is called in a
+loop. A bounding box sets the area in scope. Defaults to Ottawa, ON.
 }

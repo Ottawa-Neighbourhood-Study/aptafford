@@ -28,14 +28,6 @@ padmapper_scrape <- function(old_data = NA,
   # set these to NULL for dplyr data masking
   formatted_address <- min_bathrooms <- min_bedrooms <- min_price <- min_square_feet <- count <- NULL
 
-  # NOTE: Removing for now the save-to-file feature, to keep function simple
-  #       save results after you get them!
-  # #' @param filepath Optional character filepath to save results. Should be just directory name.
-  # #'                 If set to NA, will not save results automatically. Defaults to "data".
-  # filepath = "data",
-  filepath <- NA
-
-
   # note: this should be handled with devtools::use_pipe() when it's a real package
   `%>%` <- magrittr::`%>%`
 
@@ -119,15 +111,6 @@ padmapper_scrape <- function(old_data = NA,
   # e.g. if it's a complex with two street addresses but treated as one legal unit
   pb_ids <- unique(multi_units$pb_id)
 
-  # # function to extract data for unit, not used
-  # extract_unit_data <- function(y) {
-  #   result <- y
-  #   if (is.null(y)) result <- NA
-  #   if (length(y) > 1) result <- paste0(y, collapse = ", ")
-  #   if (length(y) == 0) result <- NA
-  #   result
-  # }
-
   # loop through multi-unit buildings
   if (verbose) message("Getting details for multi-unit listings...")
   results <- dplyr::tibble()
@@ -189,25 +172,6 @@ padmapper_scrape <- function(old_data = NA,
   apartments <- dplyr::bind_rows(single_units, results) %>%
     dplyr::distinct() %>%
     dplyr::mutate(date_scraped = as.character(Sys.Date()))
-
-  # if we have old data, put it together and clean up duplicates
-  # we're comparing all columns EXCEPT the date the data was collected!
-  if (!all(is.na(old_data))){
-    if (verbose) message("Combining new data with old data.")
-
-    # ensure that the date_scraped column, if present, is in character format
-    if ("date_scraped" %in% names(old_data)) old_data$date_scraped <- as.character(old_data$date_scraped)
-
-    # wrap this in try() so that if it fails we will still return the old data
-    try(apartments <- dplyr::bind_rows(old_data, apartments))
-
-    apartments <- dplyr::distinct(apartments, dplyr::across(!dplyr::contains("date_scraped")), .keep_all = TRUE)
-  }
-
-  if (!is.na(filepath)){
-    if (verbose) message("Writing to file.")
-    try(readr::write_csv(apartments, sprintf("%s/padmapper-%s.csv", filepath, Sys.Date())))
-  }
 
   return(apartments)
 }
