@@ -52,6 +52,7 @@ scrape_urls <- function(all_urls){
   results <- dplyr::tibble()
 
   start_url <- 1
+
   # loop through urls, catch errors and retry
   for (i in start_url:length(all_urls)){
     url <- all_urls[[i]]
@@ -191,6 +192,10 @@ scrape_apt <- function(url){
 
   # if we got more info, add it
   if (nrow(more_info_clean) > 0) result <- dplyr::bind_cols(result, more_info_clean)
+
+  # final check: did we get NA results in numeric values that will cause a crash?
+  # if so, return an empty tibble
+  if (is.na(result$price) | is.na(result$lat) | is.na(result$lon)) result <- dplyr::tibble()
 
   return(result)
 }
