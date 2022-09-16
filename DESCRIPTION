@@ -1,7 +1,7 @@
 Package: aptafford
 Type: Package
 Title: Collect and Analyze Housing Affordability Data
-Version: 0.1.0
+Version: 0.1.1
 Author: Christopher Belanger
 Maintainer: Christopher Belanger <christopher.a.belanger@gmail.com>
 Description: Collect and analyze housing affordability data from public sources.
