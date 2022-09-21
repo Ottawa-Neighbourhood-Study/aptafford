@@ -1,14 +1,14 @@
 Package: aptafford
 Type: Package
 Title: Collect and Analyze Housing Affordability Data
-Version: 0.1.1
+Version: 0.1.2
 Author: Christopher Belanger
 Maintainer: Christopher Belanger <christopher.a.belanger@gmail.com>
 Description: Collect and analyze housing affordability data from public sources.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Imports: 
     dplyr,
     httr,
