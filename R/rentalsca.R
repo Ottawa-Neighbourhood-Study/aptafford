@@ -7,7 +7,7 @@
 #'
 #' @return A `tbl_df` with rental unit information.
 #' @export
-rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata")){
+rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata"), verbose = TRUE){
 
   # for dplyr data masking
   location <- id <- name <- NULL
@@ -27,7 +27,7 @@ rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gl
 
     # we do a while loop, since we get the actual number of pages later from the API
     while (page <= last_page) {
-      cat(city, "page", page, "of",last_page)
+      if (verbose) message(paste(city, "page", page, "of",last_page))
       url <- sprintf("https://rentals.ca/phoenix/api/v1.0.2/listings?details=mid2&obj_path=%s&p=%s", city, page)
 
       num_tries <- 0
@@ -92,7 +92,7 @@ rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gl
       if (! "error" %in% class(results_bindtry)) results <- results_bindtry
 
       page <- page + 1
-      message("Pausing respectfully...")
+      if (verbose) message("Pausing respectfully...")
       Sys.sleep(5)
 
     } # end while page < last_page
