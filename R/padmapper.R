@@ -111,65 +111,76 @@ padmapper_scrape <- function(old_data = NA,
   # e.g. if it's a complex with two street addresses but treated as one legal unit
   pb_ids <- unique(multi_units$pb_id)
 
-  # loop through multi-unit buildings
-  if (verbose) message("Getting details for multi-unit listings...")
-  results <- dplyr::tibble()
+  if (length(pb_ids > 0)){
+    # loop through multi-unit buildings
+    if (verbose) message("Getting details for multi-unit listings...")
+    results <- dplyr::tibble()
 
-  for (i in 1:length(pb_ids)){
-    Sys.sleep(polite_pause)
+    for (i in 1:length(pb_ids)){
+      Sys.sleep(polite_pause)
 
-    if (verbose) message(sprintf("\r  Building %s/%s, ~%s mins %s seconds remaining       ", i, length(pb_ids), ((length(pb_ids)-i)*5) %/% 60, ((length(pb_ids)-i)*5) %% 60), appendLF = FALSE)  #message(sprintf("  Building %s/%s", i, length(pb_ids)))
+      if (verbose) message(sprintf("\r  Building %s/%s, ~%s mins %s seconds remaining       ", i, length(pb_ids), ((length(pb_ids)-i)*5) %/% 60, ((length(pb_ids)-i)*5) %% 60), appendLF = FALSE)  #message(sprintf("  Building %s/%s", i, length(pb_ids)))
 
-    pb_url <- paste0("https://www.padmapper.com/api/t/1/pages/buildings/p", pb_ids[[i]])
+      pb_url <- paste0("https://www.padmapper.com/api/t/1/pages/buildings/p", pb_ids[[i]])
 
-    pb_building <- httr::GET(url = pb_url,
-                             encode = "json",
-                             httr::add_headers("X-CSRFToken" = bundle$csrf,
-                                               "X-Zumper-XZ-Token" = bundle$xz_token))
+      pb_building <- httr::GET(url = pb_url,
+                               encode = "json",
+                               httr::add_headers("X-CSRFToken" = bundle$csrf,
+                                                 "X-Zumper-XZ-Token" = bundle$xz_token))
 
-    content_building <- httr::content(pb_building)
+      content_building <- httr::content(pb_building)
 
 
-    # if there are no floorplans present, skip to next item in the list.
-    # this could happen if e.g. the prior data list is stale and the units have rented
-    if (length(content_building$floorplan_listings) == 0) next
+      # if there are no floorplans present, skip to next item in the list.
+      # this could happen if e.g. the prior data list is stale and the units have rented
+      if (length(content_building$floorplan_listings) == 0) next
 
-    fortidying <- content_building$floorplan_listings
+      fortidying <- content_building$floorplan_listings
 
-    floorplans_tidy <- fortidying %>%
-      purrr::map(function(x) {
-        x <- append(x, x$listing_location)
-        x$listing_location <- NULL
-        x$media <- NULL
-        x$neighborhood <- NULL
-        x$amenity_groups <- NULL
-        x$prices <- NULL
-        x$features <- NULL
+      floorplans_tidy <- fortidying %>%
+        purrr::map(function(x) {
+          x <- append(x, x$listing_location)
+          x$listing_location <- NULL
+          x$media <- NULL
+          x$neighborhood <- NULL
+          x$amenity_groups <- NULL
+          x$prices <- NULL
+          x$features <- NULL
 
-        purrr::map(x, function(y) {
-          result <- y
-          if (is.null(y)) result <- NA
-          if (length(y) > 1) result <- paste0(y, collapse = ", ")
-          if (length(y) == 0) result <- NA
-          result
-        })
+          purrr::map(x, function(y) {
+            result <- y
+            if (is.null(y)) result <- NA
+            if (length(y) > 1) result <- paste0(y, collapse = ", ")
+            if (length(y) == 0) result <- NA
+            result
+          })
 
-      }) %>%
-      purrr::map_dfr(dplyr::as_tibble)
+        }) %>%
+        purrr::map_dfr(dplyr::as_tibble)
 
-    result <- floorplans_tidy %>%
-      dplyr::select(dplyr::any_of(names(single_units)), "formatted_address", -"address") %>%
-      dplyr::rename(address = formatted_address)
+      result <- floorplans_tidy %>%
+        dplyr::select(dplyr::any_of(names(single_units)), "formatted_address", -"address") %>%
+        dplyr::rename(address = formatted_address)
 
-    results <- dplyr::bind_rows(results, result)
+      results <- dplyr::bind_rows(results, result)
+    } # end of multi-unit building loop
+
+    if (verbose) message("Done checking multi-unit buildings.")
+
+  }  else { # end of if-there-are-multi-unit-buildings
+    if (verbose) message("No multi-unit listings found.")
   }
 
-  if (verbose) message("Done checking multi-unit buildings.")
 
   # remove any duplicates that slipped through
   results <- dplyr::distinct(results)
 
   apartments <- dplyr::bind_rows(single_units, results) %>%
+    dplyr::mutate(url = dplyr::if_else(
+      is.na(pb_id),
+      paste0("https://www.padmapper.com/apartments/",pl_id,"p"),
+      paste0("https://www.padmapper.com/buildings/p", pb_id)
+    )) %>%
     dplyr::distinct() %>%
     dplyr::mutate(date_scraped = as.character(Sys.Date()))
 

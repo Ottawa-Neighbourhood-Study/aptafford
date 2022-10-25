@@ -1,6 +1,6 @@
-# aptafford 0.1.2.9000
+# aptafford 0.1.2
 
-* tbc
+* Added url to Padmapper output
 
 # aptafford 0.1.1
 
