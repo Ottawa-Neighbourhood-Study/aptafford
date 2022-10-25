@@ -26,7 +26,7 @@ padmapper_scrape <- function(old_data = NA,
                              polite_pause = 5, verbose = TRUE) {
 
   # set these to NULL for dplyr data masking
-  formatted_address <- min_bathrooms <- min_bedrooms <- min_price <- min_square_feet <- count <- NULL
+  formatted_address <- min_bathrooms <- min_bedrooms <- min_price <- min_square_feet <- count <- pl_id <- pb_id <- NULL
 
   # note: this should be handled with devtools::use_pipe() when it's a real package
   `%>%` <- magrittr::`%>%`
