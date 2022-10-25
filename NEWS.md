@@ -1,6 +1,7 @@
 # aptafford 0.1.2
 
 * Added url to Padmapper output
+* Added bathrooms to rentals.ca output
 
 # aptafford 0.1.1
 

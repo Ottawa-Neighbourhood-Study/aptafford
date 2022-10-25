@@ -11,7 +11,7 @@
 rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata"), verbose = TRUE){
 
   # for dplyr data masking
-  location <- id <- name <- NULL
+  location <- id <- name <- baths_range <- beds <- NULL
 
   #return(cities)
   # test pagination
@@ -75,13 +75,17 @@ rentalsca_scrape <- function(cities = c("ottawa", "cumberland-on", "nepean", "gl
       result_nested <- dplyr::as_tibble(result_raw$data$listings) %>%
         tidyr::unnest(location) %>%
         dplyr::select(-dplyr::any_of(c("photos", "is_user_promoted", "photo", "has_tour", "has_3D_tour", "photo_count", "featured_status",
-                                       "format", "favourite", "raw_property_type", "x", "y", "owner", "rent_range", "baths_range", "beds_range",
+                                       "format", "favourite", "raw_property_type", "x", "y", "owner", "rent_range", "beds_range",
                                        "dimensions_range", "view_on_map_url", "pet_friendly"))) %>%
         dplyr::rename(location_id = id,
                       location_name = name)
 
+      # we extract bathrooms from baths_range, it doesn't seem to be provided for individual units
       result <- result_nested %>%
-        tidyr::unnest(units)
+        tidyr::unnest(units) %>%
+        dplyr::mutate(bathrooms = purrr::map_dbl(baths_range, stats::median)) %>%
+        dplyr::rename(bedrooms = beds) %>%
+        dplyr::select(-baths_range)
 
       # error handing in case of e.g. mismatched vector types in this result
       results_bindtry <- tryCatch( dplyr::bind_rows(results, result),

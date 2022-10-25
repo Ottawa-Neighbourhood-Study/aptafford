@@ -18,6 +18,7 @@ Imports:
     purrr,
     readr,
     rvest,
+    stats,
     stringr,
     tidyr
 URL: https://github.com/Ottawa-Neighbourhood-Study/aptafford
