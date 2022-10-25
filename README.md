@@ -4,6 +4,8 @@
 # aptafford
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/Ottawa-Neighbourhood-Study/aptafford/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Ottawa-Neighbourhood-Study/aptafford/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Functions for collecting and analyzing apartment affordability data.
@@ -13,7 +15,7 @@ Functions for collecting and analyzing apartment affordability data.
 You can install the development version of aptafford like so:
 
 ``` r
-# from github, tbc
+devtools::install_github("Ottawa-Neighbourhood-Study/aptafford")
 ```
 
 ## Example

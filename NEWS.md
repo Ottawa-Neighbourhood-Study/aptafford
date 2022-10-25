@@ -1,3 +1,7 @@
+# aptafford 0.1.2.9000
+
+* tbc
+
 # aptafford 0.1.1
 
 * Bugfix: Kijiji scrape was crashing with missing/removed ads.
