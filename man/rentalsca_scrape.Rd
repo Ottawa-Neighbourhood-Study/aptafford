@@ -5,12 +5,15 @@
 \title{Scrape rental unit information from Rentals.ca}
 \usage{
 rentalsca_scrape(
-  cities = c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata")
+  cities = c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata"),
+  verbose = TRUE
 )
 }
 \arguments{
 \item{cities}{Character vector. Must match rentals.ca's internal naming.
 Defaults to c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata")}
+
+\item{verbose}{Boolean. Controls console output.}
 }
 \value{
 A `tbl_df` with rental unit information.

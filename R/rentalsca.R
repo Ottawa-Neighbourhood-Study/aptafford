@@ -4,6 +4,7 @@
 #'
 #' @param cities Character vector. Must match rentals.ca's internal naming.
 #' Defaults to c("ottawa", "cumberland-on", "nepean", "gloucester", "kanata")
+#' @param verbose Boolean. Controls console output.
 #'
 #' @return A `tbl_df` with rental unit information.
 #' @export
