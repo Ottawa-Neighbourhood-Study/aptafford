@@ -1,3 +1,7 @@
+# aptafford 0.1.3
+
+* Bugfix with Padmapper scrape failing with unexpected list columns (e.g. `pets`)
+
 # aptafford 0.1.2
 
 * Added url to Padmapper output

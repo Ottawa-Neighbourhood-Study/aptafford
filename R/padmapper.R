@@ -35,8 +35,7 @@ padmapper_scrape <- function(old_data = NA,
   if (verbose) message("Getting session token...")
   response <- httr::GET(url = "https://www.padmapper.com/api/t/1/bundle")
 
-  bundle <- response %>%
-    httr::content()
+  bundle <- httr::content(response)
 
   ########## GET MAP-BASED LIST OF APARTMENTS
   # POST to pins API to get up to 10k results in the Ottawa region
@@ -77,9 +76,9 @@ padmapper_scrape <- function(old_data = NA,
   apts <- httr::content(pins_resp)
 
   # this has both single units and buildings with many units
-  biglist_tidy <- apts %>%
+  biglist_tidy <- apts |>
     purrr::map(function(x) {x$image_ids = paste0(x$image_ids, collapse = ", ")
-    x}) %>%
+    x}) |>
     purrr::map(function(x) {
       purrr::map(x, function(y) {
         # message(y)
@@ -89,23 +88,25 @@ padmapper_scrape <- function(old_data = NA,
         #dplyr::if_else(is.null(y), NA_integer_, y)
       })
 
-    }) %>%
+    }) |>
     purrr::map_dfr(dplyr::as_tibble)
 
   # if we received nothing, return an empty tibble
   if (nrow(biglist_tidy) == 0) return (dplyr::tibble())
 
   # Handle single units
-  single_units <- dplyr::filter(biglist_tidy, count == 1) %>%
+  single_units <- dplyr::filter(biglist_tidy, count == 1) |>
     dplyr::rename(bedrooms = min_bedrooms,
                   bathrooms = min_bathrooms,
                   price = min_price,
-                  square_feet = min_square_feet) %>%
+                  square_feet = min_square_feet) |>
     dplyr::select(-dplyr::contains("max"))
 
   # handle multi-units, which tell you how many units and give a range of costs.
   # we want to know the costs for each unit
-  multi_units <- dplyr::filter(biglist_tidy, count > 1)
+  # remove any NAs, they will cause errors later
+  multi_units <- dplyr::filter(biglist_tidy, count > 1) |>
+    dplyr::filter(!is.na(pb_id))
 
   # each building has a unique pb_id, but it can show up in more than one listing
   # e.g. if it's a complex with two street addresses but treated as one legal unit
@@ -116,7 +117,7 @@ padmapper_scrape <- function(old_data = NA,
     if (verbose) message("Getting details for multi-unit listings...")
     results <- dplyr::tibble()
 
-    for (i in 1:length(pb_ids)){
+    for (i in 118:length(pb_ids)){
       Sys.sleep(polite_pause)
 
       if (verbose) message(sprintf("\r  Building %s/%s, ~%s mins %s seconds remaining       ", i, length(pb_ids), ((length(pb_ids)-i)*5) %/% 60, ((length(pb_ids)-i)*5) %% 60), appendLF = FALSE)  #message(sprintf("  Building %s/%s", i, length(pb_ids)))
@@ -137,15 +138,9 @@ padmapper_scrape <- function(old_data = NA,
 
       fortidying <- content_building$floorplan_listings
 
-      floorplans_tidy <- fortidying %>%
+      floorplans_tidy <- fortidying |>
         purrr::map(function(x) {
           x <- append(x, x$listing_location)
-          x$listing_location <- NULL
-          x$media <- NULL
-          x$neighborhood <- NULL
-          x$amenity_groups <- NULL
-          x$prices <- NULL
-          x$features <- NULL
 
           purrr::map(x, function(y) {
             result <- y
@@ -155,11 +150,25 @@ padmapper_scrape <- function(old_data = NA,
             result
           })
 
-        }) %>%
-        purrr::map_dfr(dplyr::as_tibble)
+        })  |>
+        purrr::map_dfr(function(x) {
 
-      result <- floorplans_tidy %>%
-        dplyr::select(dplyr::any_of(names(single_units)), "formatted_address", -"address") %>%
+          # inline function to convert any lists to flat length-one characters
+
+          dplyr::as_tibble(x) |>
+            dplyr::mutate(dplyr::across(dplyr::everything(), function (col_check) {
+              result <- col_check
+              if (is.list(col_check)) {
+                result <- paste0(unlist(col_check), collapse = ",")
+              }
+              return(result)
+            }))
+          })
+
+
+
+      result <- floorplans_tidy |>
+        dplyr::select(dplyr::any_of(names(single_units)), "formatted_address", -"address") |>
         dplyr::rename(address = formatted_address)
 
       results <- dplyr::bind_rows(results, result)
@@ -175,13 +184,13 @@ padmapper_scrape <- function(old_data = NA,
   # remove any duplicates that slipped through
   results <- dplyr::distinct(results)
 
-  apartments <- dplyr::bind_rows(single_units, results) %>%
+  apartments <- dplyr::bind_rows(single_units, results) |>
     dplyr::mutate(url = dplyr::if_else(
       is.na(pb_id),
       paste0("https://www.padmapper.com/apartments/",pl_id,"p"),
       paste0("https://www.padmapper.com/buildings/p", pb_id)
     )) %>%
-    dplyr::distinct() %>%
+    dplyr::distinct() |>
     dplyr::mutate(date_scraped = as.character(Sys.Date()))
 
   return(apartments)
