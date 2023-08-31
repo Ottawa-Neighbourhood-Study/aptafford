@@ -106,9 +106,12 @@ get_urls <- function(start_page = 1, end_page = 10){
 
     k_html <- rvest::read_html(kijiji_url)
 
-    these_urls <- k_html %>%
-      rvest::html_elements(".title .title") %>%
-      rvest::html_attr("href")
+    these_urls <- k_html |>
+      rvest::html_elements("a") |>
+      rvest::html_attr("href") |>
+      dplyr::as_tibble() |>
+      dplyr::filter(stringr::str_detect(value, "^/v-apartments-condos/ottawa/")) |>
+      dplyr::pull(value)
 
     these_urls <- paste0("https://www.kijiji.ca", these_urls)
 

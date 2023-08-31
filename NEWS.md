@@ -1,3 +1,7 @@
+# aptafford 0.1.4
+
+* Bugfix with Kijiji scrape failing due to site redesign
+
 # aptafford 0.1.3
 
 * Bugfix with Padmapper scrape failing with unexpected list columns (e.g. `pets`)
